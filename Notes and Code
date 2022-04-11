@@ -1,0 +1,66 @@
+# It is advisable to do a Recursive Feature Elimination Cross Validation (RFECV) before running the Recursive Feature Elimination (RFE)
+
+# Here is an example:
+# Having columns :
+```
+df.columns = ['age', 'id', 'sex', 'height', 'gender', 'marital status', 'income', 'race']
+```
+# Use RFECV to identify the optimal number of features needed.
+```
+from sklearn.ensemble import RandomForestClassifier
+rfe = RandomForestClassifier(random_state = 32) # Instantiate the algo
+rfecv  = RFECV(estimator= rfe, step=1, cv=StratifiedKFold(2), scoring="accuracy") # Instantiate the RFECV and its parameters
+fit = rfecv.fit(features(or X), target(or y))
+print("Optimal number of features : %d" % rfecv.n_features_)
+>>>> Optimal number of output is 4
+```
+
+# Now that the optimal number of features has been known, we can use Recursive Feature Elimination to identify the Optimal features
+
+```
+from sklearn.feature_selection import RFE
+min_features_to_select = 1
+rfc = RandomForestClassifier()
+rfe = RFE(estimator=rfc, n_features_to_select= 4, step=1)
+fittings1 = rfe.fit(features, target)
+for i in range(features.shape[1]):
+	print('Column: %d, Selected %s, Rank: %.3f' % (i, rfe.support_[i], rfe.ranking_[i]))
+
+output will be something like:
+>>> Column: 0, Selected True, Rank: 1.000
+>>> Column: 1, Selected False, Rank: 4.000
+>>> Column: 2, Selected False, Rank: 7.000
+>>> Column: 3, Selected False, Rank: 10.000
+>>> Column: 4, Selected True, Rank: 1.000
+>>> Column: 5, Selected False, Rank: 3.000
+```
+
+# Now display the features to remove based on recursive feature elimination done above
+
+```
+columns_to_remove = features.columns.values[np.logical_not(rfe.support_)]
+columns_to_remove
+
+output will be something like:
+>>> array(['age', 'id', 'race'], dtype=object)
+```
+# Now create your new dataset by dropping the un-needed features and selecting the needed one
+```
+new_df = df.drop(['age', 'id', 'race'], axis = 1)
+```
+# Then you can cross validation to know how well this newly selected features (new_df) predicts the target column.
+
+```
+# Check how well the features predict the target variable using cross_validation
+cv = ShuffleSplit(n_splits=5, test_size=0.3, random_state=0)
+scores = cross_val_score(RandomForestClassifier(), new_df, target, cv= cv)
+
+print("%0.2f accuracy with a standard deviation of %0.2f" % (scores.mean(), scores.std()))
+>>> 0.84 accuracy with a standard deviation of 0.01
+```
+Don't forget you can also read up on the best Cross-Validation (CV) parameters to use in this [documentation](https://scikit-learn.org/stable/modules/cross_validation.html)
+Recursive Feature Elimination (RFE) [documentation](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFE.html) to learn more and understand better
+Recursive Feature Elimination Cross validation (RFECV) [documentation](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFECV.html)
+
+
+You can access this explanation on https://stackoverflow.com/a/71833979/17184061
